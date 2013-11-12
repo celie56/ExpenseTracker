@@ -37,6 +37,7 @@ int main(int argc, char *argv[]){
 	// Chris Elie
 
 	// Clears command prompt screen
+	// Change the command to "clear" to function properly in a linux terminal
 	system("cls");
 
 	// Declarations
