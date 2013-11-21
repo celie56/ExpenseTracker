@@ -4,191 +4,179 @@
 #include <string>
 #include <vector>
 #include <stdlib.h>
+#include "expense.h"
+#include "print.h"
 using namespace std;
+
+// This is the testing area for my potential one-day
+// financing program that will bring in text journal entries
+// and provide some easy calculations
+// -Yours Truly,
+// Chris Elie
 
 // Todo:
 // 1) Allow for comments in my data (example: //October)
-// 2) Distinguish between months
-// 3) Generate list of types
+//X2) Distinguish between months
+//X3) Generate list of types (IN PROGRESS)
 // 4) Add comment type for each event (example: sushi)
+//X5) Create analysis output
+//X6) Truly split date by / (Should be set now)
 
 
 // Functions Declarations
-double Total_Spending(vector<string> a);
-double Total_Food_Spending(vector<string> a, vector<string> t);
-double Spending_in_Month(vector<string> a, vector<string> d, int month);
 int current_month();
-int get_month(string date);
-void print_total_food(vector<string> a, vector<string> t);
-void print_total_spending(vector<string> amount);
 void print_interface();
-bool parse_input(vector<string> date, vector<string> amount, vector<string> type);
+bool parse_input(vector<expense> expenses, vector<string> types);
 void print_output(string title, double out);
-
-
-
-// All done with functions on functions
+bool type_exists(vector<string> types, string t);
+double Spending(vector<expense> e, int month, string type);
+// End Functions Declarations
 
 int main(int argc, char *argv[]){
-	// This is the testing area for my potential one-day
-	// financing program that will bring in text journal entries
-	// and provide some easy calculations
-	// -Yours Truly,
-	// Chris Elie
-
 	// Clears command prompt screen
 	// Change the command to "clear" to function properly in a linux terminal
 	system("cls");
 
 	// Declarations
-	ifstream input;
-	// If no file is specified, the default file is used
-	if (argc == 1){
+	ifstream input;		// Input file
+	if (argc == 1){		// If no file is specified, the default file is used
 		input.open("Expenses.txt");
 	}
-	// Alternative file is specified
-	else{
+	else{				// Alternative file is specified
 		string temp = argv[1];
 		input.open(temp.c_str());
 	}
-	string i;
-	size_t entries = 0;
+	size_t entries = 0;						// amount of entries
+	vector<expense> expenses(entries);		// main data vector
+	size_t num_types = 0;					// amount of types
+	vector<string> types(num_types);		// list of types
 	// End Declarations
-	
-
-
-	// Big Data Babies
-	vector<string> date(entries);		// Holds the date in the form mm/dd/yy
-	vector<string> amount(entries);		// Holds the amount of the expense
-	vector<string> type(entries);		// Holds the category of expense
-
 
 
 	// Parse input to vector here
 	string d, a, t;
 	while (input.good()){
 		input >> d >> a >> t;
-		date.push_back(d);
-		amount.push_back(a);
-		type.push_back(t);	
+		expenses.push_back(expense(d, a, t));
+		if (!type_exists(types, t)){
+			types.push_back(t);
+			num_types++;
+		}
 		entries++;
 	}
 
 	bool done = 0; // holds false until user decides they want to quit
 	do{
-		// Interface
-		print_interface();
-
-		// I/O
-		done = parse_input(date, amount, type);
+		print_interface();						// Interface
+		done = parse_input(expenses, types);	// I/O
 	} while (!done);
+
 	// Closing Statements
-	input.close();
+	input.close();		// Close input file
 	return 0;
 }
 
-// Functions on Functions
-// All function definitions are to go down here
-// They should all be declared at the top of the page
-
 // Calculation Functions
 
-// Will sum the amount of spending in vector a
-double Total_Spending(vector<string> a){
+// ---------------------------------------------------------------
+// Calculations
+// ---------------------------------------------------------------
+
+double Total_Spending(vector<expense> e){
 	double sum = 0;
-	for (int i = 0; i < a.size(); i++){
-		sum += atof(a[i].c_str());
+	for (int i = 0; i < e.size(); i++){
+		sum += e[i].getamount();
 	}
 	return sum;
 }
-// Will sum the total amount of spending on food
-double Total_Food_Spending(vector<string> a, vector<string> t){
+
+double Spending(vector<expense> e, int month, string type){
 	double sum = 0;
-	for (int i = 0; i < a.size(); i++){
-		if (t[i] == "food"){
-			sum += atof(a[i].c_str());
+	for (int i = 0; i < e.size(); i++){
+		if (e[i].getdate().getmonth() == month &&
+			e[i].gettype() == type)
+		{
+			sum += e[i].getamount();
 		}
 	}
 	return sum;
 }
+
+// ---------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------
+
+// Helper for adding type to type list
+bool type_exists(vector<string> types, string t){
+	for (int i = 0; i < types.size(); i++){
+		if (types[i] == t)
+			return true;
+	}
+	return false;
+}
+
+void print_types(vector<string> types){
+	for (int i = 0; i < types.size(); i++){
+		cout << endl << types[i];
+	}
+	cout << endl;
+}
+
+// ---------------------------------------------------------------
+// Time Functions
+// ---------------------------------------------------------------
 // Gets and returns the current month
 int current_month(){
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
 	return 1 + ltm->tm_mon;
 }
-// Takes the string in the format mm/dd/yy and returns the month in 1-12
-int get_month(string date){
-	return atoi(date.substr(0, date.find("/")).c_str());
-}
-// Sums the amount of spending during given month
-double Spending_in_Month(vector<string> a, vector<string> d, int month){
-	double sum = 0;
-	for (int i = 0; i < a.size(); i++){
-		if (get_month(d[i]) == month){
-			sum += atof(a[i].c_str());
-		}
-	}
-	return sum;
-}
 
-
-// Printing Functions
-
-// prints total amount spent on food
-void print_total_food(vector<string> a, vector<string> t){
-	print_output("Total Food", Total_Food_Spending(a, t));
-}
-// Prints the total spending to date
-void print_total_spending(vector<string> amount){
-	print_output("Total Spending", Total_Spending(amount));
-}
-// Prints the total spending this month
-void print_spending_this_month(vector<string> amount, vector<string> date){
-	print_output("Spending This Month", Spending_in_Month(amount, date, current_month()));
-}
-
-
+// ---------------------------------------------------------------
 // Interface Functions
+// ---------------------------------------------------------------
 
-// Prints output from calculation all pretty-like
-void print_output(string title, double out){
-	cout << endl 
-		 << "----------------------------" << endl
-		 << title << ":" << endl
-		 << "  " << out << endl
-		 << "----------------------------"
-		 << endl << endl ;
+void analysis(vector<expense> e, vector<string> t){
+	cout << endl << "----------------------------" << endl;
+	for (int i = 0; i < t.size(); i++){
+		print_space(t[i], Spending(e, current_month(), t[i]));
+	}
+	cout << "----------------------------" << endl << endl;
 }
-// Prints the main menu
-void print_interface(){
-	cout 
-		<< "Welcome to my spending data" << endl
-		<< "-----------------------------" << endl
-		<< "1) Total Spending To Date" << endl
-		<< "2) Total food spending to date" << endl
-		<< "3) Total Spending This Month" << endl
 
-		<< "5) Exit" << endl
-		<< ">> "
-		;
+// Manually chose month and type of spending
+void select_spending(vector<expense> e){
+	cout << endl
+		 << "Please enter month then type in form mm type" << endl
+		 << ">>";
+	int month;
+	string type;
+	cin >> month >> type;
+	print_output(type, Spending(e, month, type));
 }
-// Brings in the data and figures out what the user wants
-bool parse_input(vector<string> date, vector<string> amount, vector<string> type){
+
+// Main Menu Navigation
+bool parse_input(vector<expense> expenses, vector<string> types){
 	int i = 0;
 	cin >> i;
 	switch (i){
-	case 1:
-		print_total_spending(amount);
+	case 1: // Spending To Date
+		print_output("Total Spending", Total_Spending(expenses));
 		break;
 	case 2:
-		print_total_food(amount, type);
+		print_output("Food Spending This Month",
+					 Spending(expenses, current_month(), "food"));
 		break;
 	case 3:
-		print_spending_this_month(amount, date);
+		select_spending(expenses);
+		break;
+	case 4:
+		analysis(expenses, types);
 		break;
 	case 5: return 1;
 		break;
 	}
 	return 0;
 }
+
+// End Interface Functions
